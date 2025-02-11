@@ -13,9 +13,9 @@ const CreateBlog: React.FC = () => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [message, setMessage] = useState<string>("");
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
-  // Handle form field changes
+  // Handle text input changes
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -36,7 +36,7 @@ const CreateBlog: React.FC = () => {
     setLoading(true);
     setMessage("");
 
-    // Form validation
+    // Validate required fields
     if (!formData.title || !formData.description || !formData.model || !formData.year) {
       setMessage("All fields are required.");
       setLoading(false);
@@ -54,27 +54,24 @@ const CreateBlog: React.FC = () => {
         formDataToSubmit.append("image", image);
       }
 
-      // Get the token from localStorage
+      // Get authentication token
       const token = localStorage.getItem("token");
-
       if (!token) {
-        setMessage("Token is required. Please log in.");
+        setMessage("Authentication failed. Please log in.");
         setLoading(false);
         return;
       }
 
-      // Append token to FormData
-      formDataToSubmit.append("token", token);
-
-      // Send the request to the backend with the token in the request body
+      // Send request to backend
       const response = await axiosInstance.post("/blog/create", formDataToSubmit, {
         headers: {
-          "Content-Type": "multipart/form-data", // Important for sending FormData
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`, // Send token in headers
         },
       });
 
       setMessage(response.data.message || "Blog created successfully!");
-      navigate('/')
+      navigate("/"); // Redirect to homepage
     } catch (err: any) {
       console.error(err);
       const errorMessage = err.response?.data?.message || "Failed to create blog. Please try again.";
@@ -87,12 +84,12 @@ const CreateBlog: React.FC = () => {
   return (
     <div className="max-w-lg mx-auto p-6 bg-white shadow-md rounded">
       <h1 className="text-2xl font-bold mb-4">Create Blog</h1>
-      {message && <p className="text-center mb-4">{message}</p>}
+      {message && <p className="text-center text-red-500 mb-4">{message}</p>}
+      
       <form onSubmit={handleSubmit}>
+        {/* Title Field */}
         <div className="mb-4">
-          <label htmlFor="title" className="block text-sm font-medium text-gray-700">
-            Title
-          </label>
+          <label htmlFor="title" className="block text-sm font-medium text-gray-700">Title</label>
           <input
             type="text"
             id="title"
@@ -103,24 +100,24 @@ const CreateBlog: React.FC = () => {
             className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
           />
         </div>
+
+        {/* Description Field */}
         <div className="mb-4">
-          <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-            Description
-          </label>
+          <label htmlFor="description" className="block text-sm font-medium text-gray-700">Description</label>
           <textarea
             id="description"
             name="description"
             value={formData.description}
             onChange={handleChange}
             required
-            rows={6}  // Adjust this value to control height
+            rows={4}
             className="mt-1 block w-full p-3 border border-gray-300 rounded-md"
           />
         </div>
+
+        {/* Image Upload */}
         <div className="mb-4">
-          <label htmlFor="image" className="block text-sm font-medium text-gray-700">
-            Upload Image
-          </label>
+          <label htmlFor="image" className="block text-sm font-medium text-gray-700">Upload Image</label>
           <input
             type="file"
             id="image"
@@ -131,19 +128,17 @@ const CreateBlog: React.FC = () => {
             className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
           />
         </div>
+
+        {/* Image Preview */}
         {imagePreview && (
           <div className="mb-4">
-            <img
-              src={imagePreview}
-              alt="Selected preview"
-              className="w-full h-auto rounded-md shadow-md"
-            />
+            <img src={imagePreview} alt="Selected preview" className="w-full h-auto rounded-md shadow-md" />
           </div>
         )}
+
+        {/* Model Field */}
         <div className="mb-4">
-          <label htmlFor="model" className="block text-sm font-medium text-gray-700">
-            Model
-          </label>
+          <label htmlFor="model" className="block text-sm font-medium text-gray-700">Model</label>
           <input
             type="text"
             id="model"
@@ -154,10 +149,10 @@ const CreateBlog: React.FC = () => {
             className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
           />
         </div>
+
+        {/* Year Field */}
         <div className="mb-4">
-          <label htmlFor="year" className="block text-sm font-medium text-gray-700">
-            Year
-          </label>
+          <label htmlFor="year" className="block text-sm font-medium text-gray-700">Year</label>
           <input
             type="text"
             id="year"
@@ -168,6 +163,8 @@ const CreateBlog: React.FC = () => {
             className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
           />
         </div>
+
+        {/* Submit Button */}
         <button
           type="submit"
           className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600"

@@ -54,11 +54,12 @@ const Blog = () => {
               {/* Blog Image */}
               <div className="w-full h-60">
                 <img
-                  src={
-                    blog.image.startsWith("/uploads/")
-                      ? `http://localhost:5000${blog.image}`
-                      : `http://localhost:5000/uploads/${blog.image}`
-                  }
+                 src={
+                  blog.image.startsWith("/uploads/")
+                    ? `${import.meta.env.MODE === "development" ? "http://localhost:5000" : "https://carlos1.onrender.com"}${blog.image}`
+                    : `${import.meta.env.MODE === "development" ? "http://localhost:5000/uploads/" : "https://carlos1.onrender.com/uploads/"}${blog.image}`
+                }
+                
                   alt={blog.title}
                   className="w-full h-full object-cover"
                   loading="eager"
