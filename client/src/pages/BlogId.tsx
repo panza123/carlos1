@@ -53,18 +53,17 @@ const BlogId = () => {
       
       {/* Image Container */}
       <div className="w-full h-96 overflow-hidden rounded-lg shadow-lg">
-        <img
-             src={
-              blog.image.startsWith("/uploads/")
-                ? `http://localhost:5000${blog.image}`
-                : `http://localhost:5000/uploads/${blog.image}`
-            }
-          
-          
-          alt={blog.title}
-          className="w-full h-full object-cover"
-          loading="eager"
-        />
+      <img
+  src={
+    blog.image.startsWith("/uploads/")
+      ? `http://localhost:5000${blog.image}`
+      : `http://localhost:5000/uploads/${blog.image}`
+  }
+  alt={blog.title}
+  className="w-full h-full object-cover"
+  loading="eager"
+/>
+
       </div>
 
       <p className="text-gray-700 mt-6 text-lg leading-relaxed">{blog.description}</p>
