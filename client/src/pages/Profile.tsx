@@ -19,7 +19,7 @@ const Profile: React.FC = () => {
   useEffect(() => {
     const fetchBlogs = async () => {
       try {
-        const res = await axiosInstance.get('/blog/fetch');
+        const res = await axiosInstance.get("/blog/fetch");
         console.log(res.data); // Log the response to check the data structure
         setBlogs(res.data.data || []); // Set blogs correctly from the 'data' field
       } catch (error: any) {
@@ -55,14 +55,15 @@ const Profile: React.FC = () => {
               className="border p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300"
             >
               <img
-                 src={
-                  blog.image.startsWith("/uploads/")
-                    ? `http://localhost:5000${blog.image}`
-                    : `http://localhost:5000/uploads/${blog.image}`
-                }
+                src={`http://localhost:5000${
+                  blog.image.startsWith("/")
+                    ? blog.image
+                    : `/uploads/${blog.image}`
+                }`}
                 alt="Blog"
                 className="w-full h-40 object-cover rounded-md mb-3"
               />
+
               <p className="text-gray-700 mb-3">
                 {blog.description.length > 100
                   ? `${blog.description.slice(0, 100)}...`

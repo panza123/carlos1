@@ -1,5 +1,5 @@
 import React, { useState, ChangeEvent, FormEvent } from "react";
-import { axiosInstance } from "../lib/axiosInsatnce";
+import { axiosInstance } from "../lib/axiosInsatnce"; // Fixed import typo
 import { useNavigate } from "react-router-dom";
 
 const CreateBlog: React.FC = () => {
@@ -23,7 +23,7 @@ const CreateBlog: React.FC = () => {
 
   // Handle image file selection and preview
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
+    if (e.target.files?.[0]) {
       const selectedFile = e.target.files[0];
       setImage(selectedFile);
       setImagePreview(URL.createObjectURL(selectedFile));
@@ -43,30 +43,25 @@ const CreateBlog: React.FC = () => {
       return;
     }
 
+    // Check authentication token
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setMessage("Authentication failed. Please log in.");
+      setLoading(false);
+      navigate("/login"); // Redirect to login if token is missing
+      return;
+    }
+
     try {
       const formDataToSubmit = new FormData();
-      formDataToSubmit.append("title", formData.title);
-      formDataToSubmit.append("description", formData.description);
-      formDataToSubmit.append("model", formData.model);
-      formDataToSubmit.append("year", formData.year);
-
-      if (image) {
-        formDataToSubmit.append("image", image);
-      }
-
-      // Get authentication token
-      const token = localStorage.getItem("token");
-      if (!token) {
-        setMessage("Authentication failed. Please log in.");
-        setLoading(false);
-        return;
-      }
+      Object.entries(formData).forEach(([key, value]) => formDataToSubmit.append(key, value));
+      if (image) formDataToSubmit.append("image", image); // Ensure field name matches backend expectation
 
       // Send request to backend
       const response = await axiosInstance.post("/blog/create", formDataToSubmit, {
         headers: {
           "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${token}`, // Send token in headers
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -74,8 +69,7 @@ const CreateBlog: React.FC = () => {
       navigate("/"); // Redirect to homepage
     } catch (err: any) {
       console.error(err);
-      const errorMessage = err.response?.data?.message || "Failed to create blog. Please try again.";
-      setMessage(errorMessage);
+      setMessage(err.response?.data?.message || "Failed to create blog. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -154,7 +148,7 @@ const CreateBlog: React.FC = () => {
         <div className="mb-4">
           <label htmlFor="year" className="block text-sm font-medium text-gray-700">Year</label>
           <input
-            type="text"
+            type="number" // Changed from text to number
             id="year"
             name="year"
             value={formData.year}
@@ -167,7 +161,7 @@ const CreateBlog: React.FC = () => {
         {/* Submit Button */}
         <button
           type="submit"
-          className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600"
+          className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 disabled:opacity-50"
           disabled={loading}
         >
           {loading ? "Creating..." : "Create Blog"}

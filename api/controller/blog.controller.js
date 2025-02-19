@@ -4,45 +4,31 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import Blog from "../model/blog.model.js";
+import cloudinary from "cloudinary";
 
-// ✅ Ensure `uploads/` directory is created before using it
-const UPLOAD_DIR = path.resolve("uploads");
-if (!fs.existsSync(UPLOAD_DIR)) {
-    fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-    console.log(`✅ Upload directory created: ${UPLOAD_DIR}`);
-} else {
-    console.log(`✅ Upload directory already exists: ${UPLOAD_DIR}`);
-}
-
-// ✅ Multer configuration
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        console.log(`📂 Saving file to: ${UPLOAD_DIR}`);
-        cb(null, UPLOAD_DIR);
-    },
-    filename: (req, file, cb) => {
-        const filename = `${Date.now()}-${file.originalname}`;
-        console.log(`📁 File saved as: ${filename}`);
-        cb(null, filename);
-    },
+// ✅ Cloudinary Configuration
+cloudinary.v2.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// ✅ File filter to allow only images
-const fileFilter = (req, file, cb) => {
-    const allowedTypes = ["image/jpeg", "image/png", "image/gif"];
-    if (allowedTypes.includes(file.mimetype)) {
-        cb(null, true);
-    } else {
-        cb(new Error("Invalid file type. Only images are allowed."));
-    }
-};
-
-// ✅ Upload middleware
+// ✅ Multer Storage Configuration (Memory Storage for Cloudinary)
+const storage = multer.memoryStorage();
 const upload = multer({
     storage,
-    fileFilter,
     limits: { fileSize: 1024 * 1024 * 5 }, // 5MB limit
 });
+
+// ✅ Upload Image to Cloudinary
+const uploadToCloudinary = async (fileBuffer) => {
+    return new Promise((resolve, reject) => {
+        cloudinary.v2.uploader.upload_stream({ folder: "blogs" }, (error, result) => {
+            if (error) return reject(error);
+            resolve(result.secure_url);
+        }).end(fileBuffer);
+    });
+};
 
 // ✅ Create Blog
 export const createBlog = [
@@ -72,7 +58,10 @@ export const createBlog = [
                 return res.status(401).json({ success: false, message: "Not authorized, user not found" });
             }
 
-            const imagePath = req.file ? `/uploads/${req.file.filename}` : null;
+            let imagePath = null;
+            if (req.file) {
+                imagePath = await uploadToCloudinary(req.file.buffer);
+            }
 
             const blog = await Blog.create({
                 owner: foundedUser._id,
@@ -83,17 +72,10 @@ export const createBlog = [
                 year,
             });
 
-            return res.status(201).json({
-                success: true,
-                message: "Blog created successfully",
-                data: blog,
-            });
+            return res.status(201).json({ success: true, message: "Blog created successfully", data: blog });
         } catch (err) {
             console.error(err);
-            return res.status(500).json({
-                success: false,
-                message: "Internal server error",
-            });
+            return res.status(500).json({ success: false, message: "Internal server error" });
         }
     },
 ];
@@ -101,14 +83,10 @@ export const createBlog = [
 // ✅ Get All Blogs
 export const getAllJobs = async (req, res) => {
     try {
-        console.log("Received GET request to /blogs");
-
         const blogs = await Blog.find({});
         if (!blogs || blogs.length === 0) {
             return res.status(404).json({ success: false, message: "No blogs found" });
         }
-
-        console.log("Fetched blogs:", blogs);
         return res.status(200).json({ success: true, message: "Blogs fetched successfully", blogs });
     } catch (err) {
         console.error("Error fetching blogs:", err);
@@ -124,20 +102,14 @@ export const getBlogsByCreator = async (req, res) => {
             return res.status(401).json({ success: false, message: "Not authorized, token not provided" });
         }
 
-        let decoded;
-        try {
-            decoded = jwt.verify(token, process.env.JWT_SECRET);
-        } catch (err) {
-            return res.status(401).json({ success: false, message: "Invalid or expired token" });
-        }
-
+        let decoded = jwt.verify(token, process.env.JWT_SECRET);
         const user = await User.findById(decoded.id).select("_id");
         const blogs = await Blog.find({ owner: user._id });
 
         res.status(200).json({ success: true, message: "Blogs retrieved successfully", data: blogs });
     } catch (err) {
         console.error("Error fetching blogs by creator:", err);
-        res.status(500).json({ success: false, message: "Failed to get blogs by creator", error: err.message });
+        res.status(500).json({ success: false, message: "Failed to get blogs by creator" });
     }
 };
 
@@ -146,15 +118,13 @@ export const getJobId = async (req, res) => {
     try {
         const { id } = req.params;
         const blog = await Blog.findById(id);
-
         if (!blog) {
             return res.status(404).json({ message: "Blog not found" });
         }
-
         res.status(200).json({ blog });
     } catch (error) {
         console.error("Error fetching blog:", error);
-        res.status(500).json({ message: "Internal server error", error });
+        res.status(500).json({ message: "Internal server error" });
     }
 };
 
@@ -179,15 +149,14 @@ export const editBlog = async (req, res) => {
         blog.year = year;
 
         if (req.file) {
-            blog.image = `/uploads/${req.file.filename}`;
+            blog.image = await uploadToCloudinary(req.file.buffer);
         }
 
         await blog.save();
-
         return res.status(200).json({ success: true, message: "Blog updated successfully", blog });
     } catch (error) {
         console.error("Error editing blog:", error);
-        return res.status(500).json({ success: false, message: "Internal server error", error });
+        return res.status(500).json({ success: false, message: "Internal server error" });
     }
 };
 
@@ -201,17 +170,9 @@ export const deleteBlog = async (req, res) => {
         }
 
         await Blog.findByIdAndDelete(id);
-
-        if (blog.image) {
-            const imagePath = path.resolve(`.${blog.image}`);
-            if (fs.existsSync(imagePath)) {
-                fs.unlinkSync(imagePath);
-            }
-        }
-
         res.status(200).json({ success: true, message: "Blog deleted successfully" });
     } catch (error) {
         console.error("Error deleting blog:", error);
-        res.status(500).json({ success: false, message: "Internal server error", error });
+        res.status(500).json({ success: false, message: "Internal server error" });
     }
 };
