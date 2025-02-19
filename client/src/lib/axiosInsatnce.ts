@@ -4,7 +4,7 @@ import axios from "axios";
 const baseURL =
   import.meta.env.MODE === "development"
     ? "http://localhost:5000/api"
-    : "https://carlos1.onrender.com/api";
+    : "api";
 
 // Create and export an Axios instance with credentials enabled
 export const axiosInstance = axios.create({
