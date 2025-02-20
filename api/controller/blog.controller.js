@@ -26,25 +26,45 @@ const uploadToCloudinary = async (fileBuffer) => {
 };
 
 // ✅ Create Blog
+
 export const createBlog = [
     upload.single("image"),
     async (req, res) => {
         try {
+            console.log("Received request to create blog"); // Log request initiation
+            
             const { title, description, model, year } = req.body;
+            console.log("Request body:", { title, description, model, year });
+
             const token = req.cookies.token;
-            if (!token) return res.status(401).json({ success: false, message: "Token required" });
+            console.log("Token received:", token ? "Yes" : "No");
+
+            if (!token) {
+                console.log("Error: No token provided");
+                return res.status(401).json({ success: false, message: "Token required" });
+            }
 
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            console.log("Decoded token:", decoded);
+
             const user = await User.findById(decoded.id);
-            if (!user) return res.status(401).json({ success: false, message: "Unauthorized" });
+            console.log("User found:", user ? user._id : "No user found");
+
+            if (!user) {
+                console.log("Error: Unauthorized user");
+                return res.status(401).json({ success: false, message: "Unauthorized" });
+            }
 
             const imagePath = req.file ? await uploadToCloudinary(req.file.buffer) : null;
+            console.log("Image uploaded:", imagePath ? "Yes" : "No image uploaded");
+
             const blog = await Blog.create({ owner: user._id, title, description, image: imagePath, model, year });
+            console.log("Blog created:", blog);
 
             return res.status(201).json({ success: true, message: "Blog created successfully", data: blog });
         } catch (err) {
-            console.error(err);
-            res.status(500).json({ success: false, message: "Internal server error" });
+            console.error("Error creating blog:", err);
+            res.status(500).json({ success: false, message: "Internal server error", error: err.message });
         }
     },
 ];
