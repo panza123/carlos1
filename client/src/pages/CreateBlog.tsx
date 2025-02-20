@@ -1,6 +1,7 @@
 
 import React, { useState, ChangeEvent, FormEvent } from "react";
-import { axiosInstance } from "../lib/axiosInsatnce"; // Fixed typo
+import { axiosInstance } from "../lib/axiosInsatnce"; 
+
 import { useNavigate } from "react-router-dom";
 
 const CreateBlog: React.FC = () => {
@@ -47,7 +48,7 @@ const CreateBlog: React.FC = () => {
     if (!token) {
       setMessage("Authentication failed. Please log in.");
       setLoading(false);
-      navigate("/login");
+      navigate("/");
       return;
     }
 
