@@ -4,7 +4,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import Blog from "../model/blog.model.js";
-import cloudinary from "cloudinary";
+import cloudinary from "cloudinary"; 
 
 // ✅ Cloudinary Configuration
 cloudinary.v2.config({
@@ -23,10 +23,13 @@ const upload = multer({
 // ✅ Upload Image to Cloudinary
 const uploadToCloudinary = async (fileBuffer) => {
     return new Promise((resolve, reject) => {
-        cloudinary.v2.uploader.upload_stream({ folder: "blogs" }, (error, result) => {
-            if (error) return reject(error);
-            resolve(result.secure_url);
-        }).end(fileBuffer);
+        cloudinary.v2.uploader.upload_stream( 
+            { folder: "blogs" }, 
+            (error, result) => {
+                if (error) return reject(error);
+                resolve(result.secure_url);
+            }
+        ).end(fileBuffer);
     });
 };
 
@@ -81,7 +84,7 @@ export const createBlog = [
 ];
 
 // ✅ Get All Blogs
-export const getAllJobs = async (req, res) => {
+export const getAllJobs = async (req, res) => { 
     try {
         const blogs = await Blog.find({});
         if (!blogs || blogs.length === 0) {
@@ -104,6 +107,8 @@ export const getBlogsByCreator = async (req, res) => {
 
         let decoded = jwt.verify(token, process.env.JWT_SECRET);
         const user = await User.findById(decoded.id).select("_id");
+
+        
         const blogs = await Blog.find({ owner: user._id });
 
         res.status(200).json({ success: true, message: "Blogs retrieved successfully", data: blogs });
@@ -114,7 +119,7 @@ export const getBlogsByCreator = async (req, res) => {
 };
 
 // ✅ Get Blog by ID
-export const getJobId = async (req, res) => {
+export const getBlogById = async (req, res) => {
     try {
         const { id } = req.params;
         const blog = await Blog.findById(id);
@@ -129,7 +134,7 @@ export const getJobId = async (req, res) => {
 };
 
 // ✅ Edit Blog
-export const editBlog = async (req, res) => {
+export const editBlog = async (req, res) => { 
     try {
         const { id } = req.params;
         const { title, description, model, year } = req.body;
@@ -148,7 +153,7 @@ export const editBlog = async (req, res) => {
         blog.model = model;
         blog.year = year;
 
-        if (req.file) {
+        if (req.file) { 
             blog.image = await uploadToCloudinary(req.file.buffer);
         }
 

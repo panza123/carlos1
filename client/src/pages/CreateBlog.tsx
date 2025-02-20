@@ -1,5 +1,6 @@
+
 import React, { useState, ChangeEvent, FormEvent } from "react";
-import { axiosInstance } from "../lib/axiosInsatnce"; // Fixed import typo
+import { axiosInstance } from "../lib/axiosInsatnce"; // Fixed typo
 import { useNavigate } from "react-router-dom";
 
 const CreateBlog: React.FC = () => {
@@ -36,28 +37,27 @@ const CreateBlog: React.FC = () => {
     setLoading(true);
     setMessage("");
 
-    // Validate required fields
     if (!formData.title || !formData.description || !formData.model || !formData.year) {
       setMessage("All fields are required.");
       setLoading(false);
       return;
     }
 
-    // Check authentication token
     const token = localStorage.getItem("token");
     if (!token) {
       setMessage("Authentication failed. Please log in.");
       setLoading(false);
-      navigate("/login"); // Redirect to login if token is missing
+      navigate("/login");
       return;
     }
 
     try {
       const formDataToSubmit = new FormData();
-      Object.entries(formData).forEach(([key, value]) => formDataToSubmit.append(key, value));
-      if (image) formDataToSubmit.append("image", image); // Ensure field name matches backend expectation
+      Object.entries(formData).forEach(([key, value]) =>
+        formDataToSubmit.append(key, key === "year" ? value.toString() : value)
+      );
+      if (image) formDataToSubmit.append("image", image);
 
-      // Send request to backend
       const response = await axiosInstance.post("/blog/create", formDataToSubmit, {
         headers: {
           "Content-Type": "multipart/form-data",
@@ -66,7 +66,7 @@ const CreateBlog: React.FC = () => {
       });
 
       setMessage(response.data.message || "Blog created successfully!");
-      navigate("/"); // Redirect to homepage
+      navigate("/");
     } catch (err: any) {
       console.error(err);
       setMessage(err.response?.data?.message || "Failed to create blog. Please try again.");
@@ -148,7 +148,7 @@ const CreateBlog: React.FC = () => {
         <div className="mb-4">
           <label htmlFor="year" className="block text-sm font-medium text-gray-700">Year</label>
           <input
-            type="number" // Changed from text to number
+            type="number"
             id="year"
             name="year"
             value={formData.year}
