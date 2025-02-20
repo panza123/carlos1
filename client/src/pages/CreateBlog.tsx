@@ -57,7 +57,7 @@ const CreateBlog: React.FC = () => {
       );
       if (image) formDataToSubmit.append("image", image);
 
-      const response = await axiosInstance.post("/blog/create", formDataToSubmit, {
+      const response = await axiosInstance.post("/create", formDataToSubmit, {
         headers: {
           "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${token}`,
