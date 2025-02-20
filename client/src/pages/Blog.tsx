@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { axiosInstance } from "../lib/axiosInsatnce";
+import { axiosInstance } from "../lib/axiosInstance";
 
 import { Link } from "react-router-dom";
 

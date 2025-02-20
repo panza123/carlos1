@@ -1,7 +1,5 @@
-
 import React, { useState, ChangeEvent, FormEvent } from "react";
-import { axiosInstance } from "../lib/axiosInsatnce"; 
-
+import { axiosInstance } from "../lib/axiosInstance"
 import { useNavigate } from "react-router-dom";
 
 const CreateBlog: React.FC = () => {

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { FaBars, FaTimes, FaHome, FaInfoCircle, FaBlog, FaUserCircle } from 'react-icons/fa';
 import car from '../assets/carlosas.jpeg';
-import { axiosInstance } from '../lib/axiosInsatnce';
+import { axiosInstance } from '../lib/axiosInstance';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthProvider';
 

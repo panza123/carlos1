@@ -2,7 +2,7 @@ import React, { useState, useEffect, ChangeEvent, FormEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
  
 import toast from "react-hot-toast";
-import { axiosInstance } from "../lib/axiosInsatnce";
+import { axiosInstance } from "../lib/axiosInstance";
 
 const EditPage: React.FC = () => {
   const { id } = useParams<{ id: string }>(); // Get blog ID from URL params

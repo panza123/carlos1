@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { axiosInstance } from '../lib/axiosInsatnce';
+import { axiosInstance } from '../lib/axiosInstance';
 import toast from 'react-hot-toast';
 import Loading from '../lib/Loading';
 

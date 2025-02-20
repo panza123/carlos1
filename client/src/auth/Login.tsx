@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { axiosInstance } from "../lib/axiosInsatnce";
+import { axiosInstance } from "../lib/axiosInstance";
 import { useAuth } from "../context/AuthProvider";
 
 const Login: React.FC = () => {

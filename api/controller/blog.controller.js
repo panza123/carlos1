@@ -1,10 +1,8 @@
 import User from "../model/auth.model.js";
 import jwt from "jsonwebtoken";
 import multer from "multer";
-import path from "path";
-import fs from "fs";
-import Blog from "../model/blog.model.js";
 import cloudinary from "cloudinary"; 
+import Blog from "../model/blog.model.js";
 
 // ✅ Cloudinary Configuration
 cloudinary.v2.config({
@@ -13,23 +11,17 @@ cloudinary.v2.config({
     api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// ✅ Multer Storage Configuration (Memory Storage for Cloudinary)
+// ✅ Multer Storage Configuration
 const storage = multer.memoryStorage();
-const upload = multer({
-    storage,
-    limits: { fileSize: 1024 * 1024 * 5 }, // 5MB limit
-});
+const upload = multer({ storage, limits: { fileSize: 1024 * 1024 * 5 } });
 
 // ✅ Upload Image to Cloudinary
 const uploadToCloudinary = async (fileBuffer) => {
     return new Promise((resolve, reject) => {
-        cloudinary.v2.uploader.upload_stream( 
-            { folder: "blogs" }, 
-            (error, result) => {
-                if (error) return reject(error);
-                resolve(result.secure_url);
-            }
-        ).end(fileBuffer);
+        cloudinary.v2.uploader.upload_stream({ folder: "blogs" }, (error, result) => {
+            if (error) return reject(error);
+            resolve(result.secure_url);
+        }).end(fileBuffer);
     });
 };
 
@@ -37,48 +29,22 @@ const uploadToCloudinary = async (fileBuffer) => {
 export const createBlog = [
     upload.single("image"),
     async (req, res) => {
-        const { token } = req.cookies;
         try {
             const { title, description, model, year } = req.body;
+            const token = req.cookies.token;
+            if (!token) return res.status(401).json({ success: false, message: "Token required" });
 
-            if (!token) {
-                return res.status(401).json({ success: false, message: "Token is required" });
-            }
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            const user = await User.findById(decoded.id);
+            if (!user) return res.status(401).json({ success: false, message: "Unauthorized" });
 
-            if (!title || !description || !model || !year) {
-                return res.status(403).json({ success: false, message: "All fields are required" });
-            }
-
-            let decoded;
-            try {
-                decoded = jwt.verify(token, process.env.JWT_SECRET);
-            } catch (err) {
-                return res.status(401).json({ success: false, message: "Invalid or expired token" });
-            }
-
-            const foundedUser = await User.findById(decoded.id);
-            if (!foundedUser) {
-                return res.status(401).json({ success: false, message: "Not authorized, user not found" });
-            }
-
-            let imagePath = null;
-            if (req.file) {
-                imagePath = await uploadToCloudinary(req.file.buffer);
-            }
-
-            const blog = await Blog.create({
-                owner: foundedUser._id,
-                title,
-                description,
-                image: imagePath,
-                model,
-                year,
-            });
+            const imagePath = req.file ? await uploadToCloudinary(req.file.buffer) : null;
+            const blog = await Blog.create({ owner: user._id, title, description, image: imagePath, model, year });
 
             return res.status(201).json({ success: true, message: "Blog created successfully", data: blog });
         } catch (err) {
             console.error(err);
-            return res.status(500).json({ success: false, message: "Internal server error" });
+            res.status(500).json({ success: false, message: "Internal server error" });
         }
     },
 ];
