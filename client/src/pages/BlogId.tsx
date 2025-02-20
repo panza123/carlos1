@@ -6,8 +6,8 @@ interface BlogType {
   _id: string;
   title: string;
   description: string;
-  name: string;
-  date: number;
+  model: string;
+  year: number;
   image: string;
 }
 
@@ -72,12 +72,12 @@ const BlogId = () => {
 
         <div className="mt-6 border-t border-gray-300 pt-4 text-gray-600">
           <p className="text-lg font-semibold">
-            Car product: <span className="text-gray-900">{blog.name}</span>
+            Car product: <span className="text-gray-900">{blog.model}</span>
           </p>
           <p className="text-lg">
             Published on:{" "}
             <span className="text-gray-900">
-              {new Date(blog.date).toLocaleDateString()}
+              {new Date(blog.year).toLocaleDateString()}
             </span>
           </p>
         </div>
