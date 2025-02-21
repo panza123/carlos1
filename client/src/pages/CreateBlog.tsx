@@ -145,7 +145,7 @@ const CreateBlog: React.FC = () => {
 
         {/* Year Field */}
         <div className="mb-4">
-          <label htmlFor="year" className="block text-sm font-medium text-gray-700">Year</label>
+          <label htmlFor="year" className="block text-sm font-medium text-gray-700"> Pulishied Date</label>
           <input
             type="number"
             id="year"

@@ -54,12 +54,16 @@ const Blog = () => {
             >
               {/* Blog Image */}
               <div className="w-full h-60">
+  
+
               <img
-  src={`http://localhost:5000${blog.image.startsWith("/") ? blog.image : `/uploads/${blog.image}`}`}
-  alt={blog.title}
+  src={blog.image ? (blog.image.startsWith("http") ? blog.image : `http://localhost:5000/uploads/${blog.image}`) : "default-image-url.jpg"}
+  alt={blog.title || "Blog Image"}
   className="w-full h-full object-cover"
   loading="eager"
 />
+
+ 
 
               </div>
 
