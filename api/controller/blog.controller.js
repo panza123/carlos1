@@ -43,14 +43,14 @@ export const createBlog = [
         console.log("📝 Request body:", req.body);
         console.log("🖼️ File received:", req.file ? "Yes" : "No image uploaded");
   
-        // ✅ Check for token
+        // Check for token
         const token = req.cookies.token;
         console.log("🔑 Token received:", token ? "Yes" : "No token provided");
         if (!token) {
           return res.status(401).json({ success: false, message: "Token required" });
         }
   
-        // ✅ Verify token safely
+        // Verify token safely
         let decoded;
         try {
           decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -66,7 +66,7 @@ export const createBlog = [
           return res.status(401).json({ success: false, message: "Unauthorized" });
         }
   
-        // ✅ Upload image only if provided
+        // Upload image only if provided
         let imagePath = null;
         if (req.file) {
           try {
@@ -74,11 +74,11 @@ export const createBlog = [
             console.log("✅ Image uploaded successfully:", imagePath);
           } catch (uploadError) {
             console.error("❌ Image upload failed:", uploadError.message);
-            return res.status(500).json({ success: false, message: "Image upload failed" });
+            return res.status(500).json({ success: false, message: "Image upload failed", error: uploadError.message });
           }
         }
   
-        // ✅ Create new blog post
+        // Create new blog post
         const blog = await Blog.create({ 
           owner: user._id, 
           title: req.body.title, 
@@ -98,7 +98,12 @@ export const createBlog = [
   
       } catch (err) {
         console.error("❌ Error creating blog:", err);
-        res.status(500).json({ success: false, message: "Internal server error", error: err.message });
+        res.status(500).json({ 
+          success: false, 
+          message: "Internal server error", 
+          error: err.message,
+          stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+        });
       }
     },
   ];
