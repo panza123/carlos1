@@ -1,5 +1,5 @@
 import React, { useState, ChangeEvent, FormEvent } from "react";
-import { axiosInstance } from "../lib/axiosInstance"
+import { axiosInstance } from "../lib/axiosInstance";
 import { useNavigate } from "react-router-dom";
 
 const CreateBlog: React.FC = () => {
@@ -67,8 +67,19 @@ const CreateBlog: React.FC = () => {
       setMessage(response.data.message || "Blog created successfully!");
       navigate("/");
     } catch (err: any) {
-      console.error(err);
-      setMessage(err.response?.data?.message || "Failed to create blog. Please try again.");
+      console.error("Error:", err);
+
+      let errorMessage = "Failed to create blog. Please try again.";
+
+      if (err.response) {
+        errorMessage = err.response.data?.message || err.response.data || errorMessage;
+      } else if (err.request) {
+        errorMessage = "No response from server. Please check your connection.";
+      } else {
+        errorMessage = err.message;
+      }
+
+      setMessage(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -78,11 +89,13 @@ const CreateBlog: React.FC = () => {
     <div className="max-w-lg mx-auto p-6 bg-white shadow-md rounded">
       <h1 className="text-2xl font-bold mb-4">Create Blog</h1>
       {message && <p className="text-center text-red-500 mb-4">{message}</p>}
-      
+
       <form onSubmit={handleSubmit}>
         {/* Title Field */}
         <div className="mb-4">
-          <label htmlFor="title" className="block text-sm font-medium text-gray-700">Title</label>
+          <label htmlFor="title" className="block text-sm font-medium text-gray-700">
+            Title
+          </label>
           <input
             type="text"
             id="title"
@@ -96,7 +109,9 @@ const CreateBlog: React.FC = () => {
 
         {/* Description Field */}
         <div className="mb-4">
-          <label htmlFor="description" className="block text-sm font-medium text-gray-700">Description</label>
+          <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+            Description
+          </label>
           <textarea
             id="description"
             name="description"
@@ -110,7 +125,9 @@ const CreateBlog: React.FC = () => {
 
         {/* Image Upload */}
         <div className="mb-4">
-          <label htmlFor="image" className="block text-sm font-medium text-gray-700">Upload Image</label>
+          <label htmlFor="image" className="block text-sm font-medium text-gray-700">
+            Upload Image
+          </label>
           <input
             type="file"
             id="image"
@@ -131,7 +148,9 @@ const CreateBlog: React.FC = () => {
 
         {/* Model Field */}
         <div className="mb-4">
-          <label htmlFor="model" className="block text-sm font-medium text-gray-700">Model</label>
+          <label htmlFor="model" className="block text-sm font-medium text-gray-700">
+            Model
+          </label>
           <input
             type="text"
             id="model"
@@ -145,7 +164,9 @@ const CreateBlog: React.FC = () => {
 
         {/* Year Field */}
         <div className="mb-4">
-          <label htmlFor="year" className="block text-sm font-medium text-gray-700">Published Year </label>
+          <label htmlFor="year" className="block text-sm font-medium text-gray-700">
+            Published Year
+          </label>
           <input
             type="number"
             id="year"
