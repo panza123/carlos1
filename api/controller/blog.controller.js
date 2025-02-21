@@ -1,83 +1,94 @@
+
 import User from "../model/auth.model.js";
 import jwt from "jsonwebtoken";
 import multer from "multer";
-import cloudinary from "cloudinary";
+import { v2 as cloudinary } from "cloudinary";
 import Blog from "../model/blog.model.js";
 import dotenv from "dotenv";
 dotenv.config();
 
 // ✅ Cloudinary Configuration
-cloudinary.v2.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
 // ✅ Multer Storage Configuration (Memory Storage)
 const storage = multer.memoryStorage();
-const upload = multer({ storage, limits: { fileSize: 1024 * 1024 * 5 } });
+const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 
 console.log("Multer storage configured: Using memory storage.");
 
 // ✅ Upload Image to Cloudinary
 const uploadToCloudinary = (fileBuffer) => {
-    return new Promise((resolve, reject) => {
-        const uploadStream = cloudinary.v2.uploader.upload_stream(
-            { folder: "blogs" },
-            (error, result) => {
-                if (error) return reject(error);
-                resolve(result.secure_url);
-            }
-        );
-        uploadStream.end(fileBuffer);
-    });
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      { folder: "blogs" },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result.secure_url);
+      }
+    );
+    uploadStream.end(fileBuffer);
+  });
 };
 
 // ✅ Create Blog
 export const createBlog = [
-    upload.single("image"),
-    async (req, res) => {
-        try {
-            console.log("Received request to create blog");
+  upload.single("image"),
+  async (req, res) => {
+    try {
+      console.log("Received request to create blog");
 
-            const { title, description, model, year } = req.body;
-            console.log("Request body:", { title, description, model, year });
+      const { title, description, model, year } = req.body;
+      console.log("Request body:", { title, description, model, year });
 
-            const token = req.cookies.token;
-            if (!token) {
-                return res.status(401).json({ success: false, message: "Token required" });
-            }
+      // ✅ Check for token
+      const token = req.cookies.token;
+      if (!token) {
+        return res.status(401).json({ success: false, message: "Token required" });
+      }
 
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            const user = await User.findById(decoded.id);
-            if (!user) {
-                return res.status(401).json({ success: false, message: "Unauthorized" });
-            }
+      // ✅ Verify token safely
+      let decoded;
+      try {
+        decoded = jwt.verify(token, process.env.JWT_SECRET);
+      } catch (err) {
+        return res.status(401).json({ success: false, message: "Invalid or expired token" });
+      }
 
-            const imagePath = req.file ? await uploadToCloudinary(req.file.buffer) : null;
-            console.log("Image uploaded:", imagePath ? "Yes" : "No image uploaded");
+      const user = await User.findById(decoded.id);
+      if (!user) {
+        return res.status(401).json({ success: false, message: "Unauthorized" });
+      }
 
-            const blog = await Blog.create({ 
-                owner: user._id, 
-                title, 
-                description, 
-                image: imagePath, 
-                model, 
-                year 
-            });
+      // ✅ Upload image only if provided
+      const imagePath = req.file ? await uploadToCloudinary(req.file.buffer) : null;
+      console.log("Image uploaded:", imagePath ? "Yes" : "No image uploaded");
 
-            return res.status(201).json({ success: true, message: "Blog created successfully", data: blog });
-        } catch (err) {
-            console.error("Error creating blog:", err);
-            res.status(500).json({ success: false, message: "Internal server error", error: err.message });
-        }
-    },
+      // ✅ Create new blog post
+      const blog = await Blog.create({ 
+        owner: user._id, 
+        title, 
+        description, 
+        image: imagePath, 
+        model, 
+        year :new Date()
+      });
+
+      return res.status(201).json({ success: true, message: "Blog created successfully", data: blog });
+    } catch (err) {
+      console.error("Error creating blog:", err);
+      res.status(500).json({ success: false, message: "Internal server error", error: err.message });
+    }
+  },
 ];
 
 // ✅ Get All Blogs
 export const getAllJobs = async (req, res) => { 
     try {
-        const blogs = await Blog.find({});
+        const blogs = await Blog.find().sort({ createdAt: -1 }); // Newest first
         if (!blogs.length) {
             return res.status(404).json({ success: false, message: "No blogs found" });
         }

@@ -95,9 +95,10 @@ const BlogId = () => {
             <span className="text-gray-900">Car Product:</span> {blog.model}
           </p>
           <p className="text-lg">
-            <span className="text-gray-900">Published on:</span>{" "}
-            {new Date(blog.year).toLocaleDateString()}
-          </p>
+  <span className="text-gray-900">Published on:</span>{" "}
+  {blog.year ? new Date(blog.year).toLocaleDateString() : "Unknown"}
+</p>
+
         </div>
       </div>
     </div>
