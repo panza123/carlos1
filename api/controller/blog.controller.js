@@ -36,59 +36,78 @@ const uploadToCloudinary = (fileBuffer) => {
 
 // ✅ Create Blog
 export const createBlog = [
-  upload.single("image"),
-  async (req, res) => {
-    try {
-      console.log("Received request to create blog");
-
-      const { title, description, model, year } = req.body;
-      console.log("Request body:", { title, description, model, year });
-
-      // ✅ Check for token
-      const token = req.cookies.token;
-      if (!token) {
-        return res.status(401).json({ success: false, message: "Token required" });
-      }
-
-      // ✅ Verify token safely
-      let decoded;
+    upload.single("image"),
+    async (req, res) => {
       try {
-        decoded = jwt.verify(token, process.env.JWT_SECRET);
+        console.log("🔵 Received request to create blog");
+        console.log("📝 Request body:", req.body);
+        console.log("🖼️ File received:", req.file ? "Yes" : "No image uploaded");
+  
+        // ✅ Check for token
+        const token = req.cookies.token;
+        console.log("🔑 Token received:", token ? "Yes" : "No token provided");
+        if (!token) {
+          return res.status(401).json({ success: false, message: "Token required" });
+        }
+  
+        // ✅ Verify token safely
+        let decoded;
+        try {
+          decoded = jwt.verify(token, process.env.JWT_SECRET);
+          console.log("✅ Token verified:", decoded);
+        } catch (err) {
+          console.error("❌ Token verification failed:", err.message);
+          return res.status(401).json({ success: false, message: "Invalid or expired token" });
+        }
+  
+        const user = await User.findById(decoded.id);
+        console.log("👤 User found:", user ? "Yes" : "No user found");
+        if (!user) {
+          return res.status(401).json({ success: false, message: "Unauthorized" });
+        }
+  
+        // ✅ Upload image only if provided
+        let imagePath = null;
+        if (req.file) {
+          try {
+            imagePath = await uploadToCloudinary(req.file.buffer);
+            console.log("✅ Image uploaded successfully:", imagePath);
+          } catch (uploadError) {
+            console.error("❌ Image upload failed:", uploadError.message);
+            return res.status(500).json({ success: false, message: "Image upload failed" });
+          }
+        }
+  
+        // ✅ Create new blog post
+        const blog = await Blog.create({ 
+          owner: user._id, 
+          title: req.body.title, 
+          description: req.body.description, 
+          image: imagePath, 
+          model: req.body.model, 
+          year: new Date(),
+        });
+  
+        console.log("✅ Blog created successfully:", blog);
+  
+        return res.status(201).json({ 
+          success: true, 
+          message: "Blog created successfully", 
+          data: blog 
+        });
+  
       } catch (err) {
-        return res.status(401).json({ success: false, message: "Invalid or expired token" });
+        console.error("❌ Error creating blog:", err);
+        res.status(500).json({ success: false, message: "Internal server error", error: err.message });
       }
-
-      const user = await User.findById(decoded.id);
-      if (!user) {
-        return res.status(401).json({ success: false, message: "Unauthorized" });
-      }
-
-      // ✅ Upload image only if provided
-      const imagePath = req.file ? await uploadToCloudinary(req.file.buffer) : null;
-      console.log("Image uploaded:", imagePath ? "Yes" : "No image uploaded");
-
-      // ✅ Create new blog post
-      const blog = await Blog.create({ 
-        owner: user._id, 
-        title, 
-        description, 
-        image: imagePath, 
-        model, 
-        year :new Date()
-      });
-
-      return res.status(201).json({ success: true, message: "Blog created successfully", data: blog });
-    } catch (err) {
-      console.error("Error creating blog:", err);
-      res.status(500).json({ success: false, message: "Internal server error", error: err.message });
-    }
-  },
-];
+    },
+  ];
+  
 
 // ✅ Get All Blogs
 export const getAllJobs = async (req, res) => { 
     try {
-        const blogs = await Blog.find().sort({ createdAt: -1 }); // Newest first
+         const blogs = await Blog.find().sort({ createdAt: -1 }); // Newest first
         if (!blogs.length) {
             return res.status(404).json({ success: false, message: "No blogs found" });
         }
